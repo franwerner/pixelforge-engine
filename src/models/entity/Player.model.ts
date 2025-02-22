@@ -1,5 +1,5 @@
 import World from "../world/World.model";
-import Entity from "./Entity.models";
+import Entity from "./Entity.model";
 
 class Player extends Entity {
     constructor() {
@@ -9,36 +9,41 @@ class Player extends Entity {
         this.isSolid = false
         this.free_fall = {
             active: false,
-            now: false
         }
-        this.hit_box = {
-            width : 16,
-            height : 34
-        }
+        this.width = 25
+        this.height = 16
     }
 
+ 
     private controls() {
         //6.2323
-        const pixel = 12.33
+        const pixel = 8
         window.addEventListener("keypress", (e) => {
             if (e.key === "a") {
-                this.ensureMove({ dx: -pixel, dy: 0 })
+                this.move({ dx: -pixel, dy: 0 })
             }
             else if (e.key === "d") {
-                this.ensureMove({ dx: pixel, dy: 0 })
+                this.move({ dx: pixel, dy: 0 })
             }
-            else if (e.key === "w" && !this.free_fall.now) {
-                this.ensureMove({ dx: 0, dy: -pixel }); // Mover hacia arriba
+            else if (e.key === "w") {
+                this.move({ dx: 0, dy: -pixel }); // Mover hacia arriba
             } else if (e.key === "s") {
-                this.ensureMove({ dx: 0, dy: pixel }); // Mover hacia abajo
+                this.move({ dx: 0, dy: pixel }); // Mover hacia abajo
             } else if (e.code === "Space" && !this.free_fall.now) {
-                this.ensureMove({dx: 0, dy: -50.3 })
+                this.move({ dx: 0, dy: -50.3 })
             }
         })
         window.addEventListener("keyup", (e) => {
             if (e.key === "Escape") {
                 const chunk = World.getChunk(this.position)
+                console.log(World.chunks)
                 console.log(chunk)
+            } else if (e.key === "f") {
+                this.free_fall.active = !this.free_fall.active
+                this.free_fall.now = false
+                this.vy = 0
+            } else if (e.key === "t") {
+                World.loadChunksInRange(this.position)
             }
         })
     }

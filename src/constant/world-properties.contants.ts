@@ -1,7 +1,6 @@
 
 const pixel = 16
 const worldProperties = {
-    gravity: 9,
     width: 1920,
     height: 1080,
     pixel,

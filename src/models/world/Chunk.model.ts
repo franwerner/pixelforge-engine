@@ -1,10 +1,12 @@
 import worldProperties from "@/constant/world-properties.contants"
 import Position from "@/types/Position.types"
-import { PhysicalObject } from "../entity/PhysicalObject.model"
 import WorldModel from "./World.model"
+import Renderer from "../render/Renderer.model"
+import toDecimal from "@/utils/toDecimal.utilts"
 
-type CellValues = PhysicalObject
-type Cell = Array<Cell> | CellValues
+type CellElements = Renderer
+type CellElementsWithZero = CellElements | 0
+type Cell = Array<Cell> | CellElements
 type ChunkGrid = Array<Array<Cell | 0>>
 
 interface Chunk {
@@ -14,16 +16,16 @@ interface Chunk {
 }
 
 class ChunkElements {
-    elements: Set<PhysicalObject>
+    elements: Set<Renderer>
     constructor() {
         this.elements = new Set()
     }
 
-    addElement(element: PhysicalObject) {
+    addElement(element: Renderer) {
         this.elements.add(element)
     }
 
-    deleteElement(element: PhysicalObject) {
+    deleteElement(element: Renderer) {
         this.elements.delete(element)
     }
 }
@@ -37,8 +39,7 @@ class Chunk extends ChunkElements {
     }
 
     getCellPosition({ x, y }: Position) {
-        const {chunk,pixel} = worldProperties
-        const {cells_per_chunk} = chunk
+        const { pixel } = worldProperties
         /**
          * Con este calculo lo que haces es trabajar con las celdas en forma independiente a de la posicion absoluta.
          * Si no que la hace de forma relativa segun el grid de cada chunk.
@@ -55,9 +56,13 @@ class Chunk extends ChunkElements {
         const relative_y = y - this.y
         const position_x = Math.abs(Math.floor(relative_x / pixel))
         const position_y = Math.abs(Math.floor(relative_y / pixel))
+
+        if (position_y >= worldProperties.chunk.cells_per_chunk) {
+            throw new Error(`position_y es >= 32, lo que es incorrecto en un indice de un grid 0-31 ${y}-${this.y}`)
+        }
         return {
             position_x,
-            position_y : position_y >= cells_per_chunk ? cells_per_chunk - 1 : position_y
+            position_y: position_y
         }
     }
 
@@ -66,9 +71,10 @@ class Chunk extends ChunkElements {
         return this.grid[position_y][position_x]
     }
 
-    addElementInCell({ element, ...position }: { y: number, x: number, element: Cell }) {
+    addElementInCell({ element, ...position }: { y: number, x: number, element: CellElements }) {
         const { position_x, position_y } = this.getCellPosition(position)
         const row = this.grid[position_y]
+
         const cell = row[position_x]
         if (Array.isArray(cell)) {
             cell.push(element)
@@ -90,21 +96,39 @@ class Chunk extends ChunkElements {
         }
     }
 
-    draw(){
+    draw() {
         const ctx = WorldModel.ctx
         ctx.save()
-        const {x,y} = this
-        const {size} = worldProperties.chunk
-        ctx.lineWidth = 2
-        ctx.strokeRect(x,y,size,size)
+        ctx.strokeStyle = "rgba(255, 0, 0, 0.5)"
+        ctx.lineWidth = 1
+
+        const { pixel, chunk } = worldProperties
+        const { cells_per_chunk } = chunk
+
+        for (let y = 0; y < cells_per_chunk; y++) {
+            for (let x = 0; x < cells_per_chunk; x++) {
+                let posX = x * pixel + this.x;
+                let posY = y * pixel + this.y;
+                ctx.strokeRect(posX, posY, pixel, pixel);
+            }
+        }
         ctx.restore()
+        ctx.save()
+        const { x, y } = this
+        const { size } = worldProperties.chunk
+        ctx.lineWidth = 2
+        ctx.strokeRect(x, y, size, size)
+
+        ctx.restore()
+
+
     }
 
     generateGrid() {
         const grid = []
         const max_chunks = worldProperties.chunk.cells_per_chunk
         for (let y = 0; y < max_chunks; y++) {
-            const columns: CellValues | 0[] = []
+            const columns: CellElements | 0[] = []
             for (let x = 0; x < max_chunks; x++) {
                 columns.push(0)
             }
@@ -117,5 +141,5 @@ class Chunk extends ChunkElements {
 }
 
 
-export type { Chunk,Cell }
+export type { Chunk, Cell, CellElementsWithZero }
 export default Chunk
