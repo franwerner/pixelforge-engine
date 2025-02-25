@@ -1,6 +1,7 @@
 import Movement from "@/types/Movent.types";
 import Collider, { CollisionException } from "./Collider.model";
 import World from "../world/World.model";
+import ElementsTaskQueueModel from "../tick/task-queue/ElementsTaskQueue.model";
 
 class Motion extends Collider {
     constructor() {
@@ -9,19 +10,21 @@ class Motion extends Collider {
 
     ensureMove = (props: Movement) => {
         let test: Array<CollisionException> = []
-        const res = this.calculateBlocks(props, (prev, { y }) => {
-            const colission = this.checkColission(prev, props)
+        const res = this.calculateBlocks(props, ({ y, x }) => {
+            const colission = this.checkColission({
+                x: x.coverage,
+                y: y.coverage
+            }, props)
 
             if (CollisionException.isInstaceOf(colission)) {
                 test.push(colission)
             }
 
-            if ((y.iteration === y.total - 1) && test.length === 0 ) {
+            if ((y.iteration === y.total - 1) && test.length === 0) {
                 const r = this.borderColission({ ...props })
                 if (r) return r
             }
         })
-
 
         const colission = res || test.sort((a, b) => {
             if (a.element && b.element) {
@@ -43,6 +46,7 @@ class Motion extends Collider {
             else return 0
         })[0]
 
+
         const dy = colission?.offset?.y ?? props.dy
         const dx = colission?.offset?.x ?? props.dx
 
@@ -50,7 +54,7 @@ class Motion extends Collider {
             this.moveBlocks({ dx, dy })
         }
 
-        
+
         return {
             dx,
             dy,
@@ -60,9 +64,12 @@ class Motion extends Collider {
 
     private moveBlocks(props: Movement) {
         const { dx = 0, dy = 0 } = props
-        this.calculateBlocks({ dx: 0, dy: 0 }, (prev) => {
+        this.calculateBlocks({ dx: 0, dy: 0 }, ({ x, y }) => {
+            const prev = {
+                x: x.span,
+                y: y.span
+            }
             const prev_chunk = World.getChunk(prev)
-
             prev_chunk.deleteElement(this)
             prev_chunk.elements = new Set(prev_chunk.elements)
             /**
@@ -76,10 +83,10 @@ class Motion extends Collider {
         })//DELETE
 
 
-        this.calculateBlocks(props, (prev,info) => {
+        this.calculateBlocks(props, ({ x, y }) => {
             const next = {
-                x: prev.x + dx,
-                y: prev.y + dy
+                x: x.span + dx,
+                y: y.span + dy
             }
             try {
 
@@ -87,11 +94,9 @@ class Motion extends Collider {
                 next_chunk.addElement(this)
                 next_chunk.addElementInCell({ element: this, ...next })
             } catch (error) {
-                // console.log(next,info,this)
                 throw error
             }
         })//ADD
-
 
         this.setAxis({
             y: this.position.y + dy,
@@ -99,10 +104,8 @@ class Motion extends Collider {
         })
     }
 
-
     move(props: Movement) {
-
-        World.tick.set(this.ensureMove, props)
+        ElementsTaskQueueModel.set(this, this.ensureMove, props)
     }
 
 }

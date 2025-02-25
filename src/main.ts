@@ -4,44 +4,40 @@ import Player from "./models/entity/Player.model";
 import Renderer from "./models/render/Renderer.model";
 import getFrames from "./utils/getFrames.utilts";
 import Entity from "./models/entity/Entity.model";
-import Collider from "./models/physics/Collider.model";
-
-
+import TickModel from "./models/tick/Tick.model";
 
 const player = new Player()
 
-player.spawn({
-    x: 0,
-    y: 7500
-})
 
 
-
-// new Entity().spawn({ x: -100, y: 7450})
-// new Entity().spawn({ x: -100, y: 7450})
+// new Entity().spawn({ x: -100, y: -3450})
+// const black = new Entity()
+// black.spawn({ x: -100, y: -3450})
+// black.color = "black"
 // const t =  new Entity()
-// t.spawn({ x: -100, y: 7450})
+// t.spawn({ x: -100, y: -3450})
 // t.name = "ASD"
+// t.color = "green"
 // const test = new Entity()
-// test.spawn({ x: -100, y: 7450})
+// test.spawn({ x: -100, y: -3450})
 // test.name = "TEST"
+// test.color ="red"
 
-
+player.spawn({
+    x: -80,
+    y: -3410
+})
 
 const animate = (now: number) => {
     WorldModel.time.now = now
     const ctx = WorldModel.ctx
     WorldModel.loadChunksInRange(player.position)
     const chunks = WorldModel.loadedChunks
-    WorldModel.tick.process()
+    TickModel.run()
     ctx.clearRect(0, 0, worldProperties.width, worldProperties.height)
     ctx.save()
     ctx.translate(-player.position.x + (worldProperties.width / 2), -player.position.y + (worldProperties.height / 2))
     const hasVisited = new Set<Renderer>()
-    /**
-     * Solo una entidad podra se renderizada en el mismo ciclo de renderizado.
-     * Ya que multiples chunks pueden contender pedazos de otra entidad.
-     */
     chunks.forEach(chunk => {
         chunk.draw()
         chunk.elements.forEach(k => {

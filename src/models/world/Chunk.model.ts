@@ -58,6 +58,12 @@ class Chunk extends ChunkElements {
         const position_y = Math.abs(Math.floor(relative_y / pixel))
 
         if (position_y >= worldProperties.chunk.cells_per_chunk) {
+            /**
+             * Esto jamaz deberia pasar, ya que la posicion en y no deberia superar el tamaño del grid.
+             * En caso de que de este tipo de ERRORES hay algun problema con la deteccion de la colissiones.
+             * Ya que si la colission no se detecta estaria acumulando bloques en superposiciones, y al mover alguno de los bloques superpuesto colissions en este punto
+             * se haria efectiva pero los calculos de la distancias no serian los corresctos dandos valores superioes al limite.
+             */
             throw new Error(`position_y es >= 32, lo que es incorrecto en un indice de un grid 0-31 ${y}-${this.y}`)
         }
         return {

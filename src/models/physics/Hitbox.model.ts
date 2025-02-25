@@ -1,7 +1,6 @@
 import worldProperties from "@/constant/world-properties.contants"
 import Movement from "@/types/Movent.types"
 import Position from "@/types/Position.types"
-import Player from "../entity/Player.model"
 import toDecimal from "@/utils/toDecimal.utilts"
 
 interface Hitbox {
@@ -16,10 +15,12 @@ interface Hitbox {
 
 type BlockInfo = {
     [K in "x" | "y"]: {
-        iteration: number;
-        total: number;
-    };
-};
+        iteration: number; // Iteración actual sobre el eje
+        total: number; // Número total de bloques en ese eje
+        coverage: number; //Valor real donde inicia cada bloque del a hitbox con respecto a las cordenadas y el espacio que 
+        span: number; // Valor total de la hitbox en el eje, independientemente de su posición.
+    }
+}
 
 const pixel = worldProperties.pixel
 
@@ -57,15 +58,21 @@ class Hitbox {
 
     }
 
-    calculateBlocks<T>({ dx = 0, dy = 0, withResidual }: Movement & { withResidual: boolean }, action: (position: Position, block_info: BlockInfo) => T | void) {
+
+    /**
+     * Cada coverage debe ser lo que ocupa en la hitbox realmente(visulamente)
+     * Es decir si el bloque mide 25 ocupara 2 bloques pero el segundo bloque solo mide se le coloca 25pixeles.
+     * 
+     */
+
+
+    calculateBlocks<T>({ dx = 0, dy = 0 }: Movement, action: (block_info: BlockInfo) => T | void) {
         const positionY = this.position.y + dy
         const positionX = this.position.x + dx
         const residual_y = (positionY % pixel + pixel) % pixel
         const residual_x = (positionX % pixel + pixel) % pixel
-        const xx = this.width + residual_x
-        const yy = this.height + residual_y
-        const blocksX = Math.ceil((xx) / pixel)
-        const blocksY = Math.ceil((yy) / pixel)
+        const blocksX = Math.ceil((this.width + residual_x) / pixel)
+        const blocksY = Math.ceil((this.height + residual_y) / pixel)
 
         /**
          * Calcula los bloques ocupados por la hitbox de un objeto y ejecuta una acción en cada uno.
@@ -83,21 +90,25 @@ class Hitbox {
          * // - Total: 2x3 = 6 bloques.
          */
 
+
         for (let y = 0; y < blocksY; y++) {
             for (let x = 0; x < blocksX; x++) {
                 const sy = (pixel * y)
                 const sx = (pixel * x)
+                const spanX = this.position.x + sx
+                const spanY = this.position.y + sy
                 const isBreak = action({
-                    x: this.position.x + sx,
-                    y: this.position.y + sy,
-                }, {
                     x: {
                         iteration: x,
-                        total: blocksX
+                        total: blocksX,
+                        coverage: x === blocksX - 1 ? spanX - residual_x : spanX,
+                        span: spanX,
                     },
                     y: {
                         iteration: y,
-                        total: blocksY
+                        total: blocksY,
+                        coverage: y === blocksY - 1 ? spanY - residual_y : spanY,
+                        span: spanY
                     }
                 })
                 if (isBreak) {

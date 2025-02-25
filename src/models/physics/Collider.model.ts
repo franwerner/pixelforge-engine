@@ -8,12 +8,13 @@ import worldProperties from "@/constant/world-properties.contants"
 import Renderer from "../render/Renderer.model"
 import Axis from "@/types/Axis.types"
 import Player from "../entity/Player.model"
+import WorldModel from "../world/World.model"
 
 interface ICollisionException {
     colission: boolean,
     offset: { x: number, y: number }
     element: CellElementsWithZero
-    type: "border" | "element" 
+    type: "border" | "element"
 
 }
 
@@ -21,7 +22,7 @@ class CollisionException {
     colission: ICollisionException["colission"]
     offset: ICollisionException["offset"]
     element: ICollisionException["element"]
-    type : ICollisionException["type"]
+    type: ICollisionException["type"]
     constructor({ element, offset, type }: Omit<ICollisionException, "colission">) {
         this.element = element
         this.colission = true
@@ -33,7 +34,6 @@ class CollisionException {
         return exception instanceof CollisionException
     }
 }
-
 
 class Collider extends Hitbox {
     constructor() {
@@ -61,37 +61,31 @@ class Collider extends Hitbox {
         if (!(element instanceof Hitbox) || element == this || (!this.isSolid && !element.isSolid)) return
 
         const { value, type } = axis
-
         const currentBounds = this.getBounds()
         const collidedBounds = element.getBounds()
-
         const current = currentBounds[type]
         const collided = collidedBounds[type]
 
-        const movingRight = value > 0
-        const movingLeft = value < 0
 
-        const ColissionPrimary =
-            movingRight
+        const colissionCurrentAxis =
+            value > 0
                 ? current.end + value > collided.start && (current.start < collided.end)
-                : movingLeft
-                    ? current.start + value < collided.end && (current.end > collided.start)
-                    : false;
+                : current.start + value < collided.end && (current.end > collided.start)
 
         const counterAxis = type == "y" ? "x" : "y"
         const counterCurrent = currentBounds[counterAxis]
 
         const counterCollided = collidedBounds[counterAxis]
 
-        const CollisionSecondary =
-            (counterCurrent.end) > counterCollided.start &&
-            (counterCurrent.start) < counterCollided.end
+        const colissionCounterAxis =
+            counterCurrent.end > counterCollided.start &&
+            counterCurrent.start < counterCollided.end
 
 
-        if (!ColissionPrimary || !CollisionSecondary) return
+        if (!colissionCurrentAxis || !colissionCounterAxis) return
+
 
         const offset = current.end < collided.end ? collided.start - current.end : collided.end - current.start //resultado positivo-negativo
-
         throw new CollisionException({
             element,
             offset: {
@@ -105,14 +99,13 @@ class Collider extends Hitbox {
 
     borderColission({ dy, dx }: Movement): CollisionException | undefined {
         const max_chunk = worldProperties.chunk.max_chunk_y * 512
-        const endY = ((this.height) + this.position.y)
-        const startY = this.position.y
-        if ((endY + dy) > max_chunk || (startY + dy) < -max_chunk) {
+        const { end, start } = this.getBounds().y
+        if ((end + dy) > max_chunk || (start + dy) < -max_chunk) {
             return new CollisionException({
                 element: 0,
                 offset: {
                     x: dx,
-                    y: dy > 0 ? max_chunk - endY : Math.abs(startY) - max_chunk
+                    y: dy > 0 ? max_chunk - end : Math.abs(start) - max_chunk
                 },
                 type: "border"
             })
@@ -127,7 +120,7 @@ class Collider extends Hitbox {
         const steps = Math.ceil(Math.abs(movement) / stepSize) + 1
         /**
          * Sumamos +1, para que su propio eje tambien se incluya revisar nuevamente.
-         * Ya que puede estar dentr de un array de otros elementos.
+         * Ya que puede estar dentro de un array de otros elementos.
          */
         const step = Math.sign(movement) * stepSize
         const residual = movement % stepSize
@@ -142,7 +135,6 @@ class Collider extends Hitbox {
             }
             const y = type == "y" ? value + acc : counter_type
             const x = type == "x" ? value + acc : counter_type
-
             const element = this.getCell({ x: x, y: y })
 
             this.pixelColission({
@@ -158,7 +150,6 @@ class Collider extends Hitbox {
     checkColission(props: Position, movement: Movement, visited = new Set()): CollisionException | undefined {
         const cords = `${movement.dy}|${movement.dx}`
         try {
-
             if (visited.has(cords)) {
                 return new CollisionException({
                     element: 0,
@@ -166,7 +157,7 @@ class Collider extends Hitbox {
                         x: 0,
                         y: 0
                     },
-                    type : ""
+                    type: ""
                 })
             }
             this.rangeColission({
@@ -181,8 +172,6 @@ class Collider extends Hitbox {
                 type: "x",
                 value: props.x
             })
-
-
         } catch (e) {
             if (CollisionException.isInstaceOf(e)) {
                 // visited.add(cords)

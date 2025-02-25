@@ -17,6 +17,7 @@ class Entity extends Renderer {
         this.width = 32,
         this.height = 32
     }
+
     pause(){
         this.free_fall.active = !this.free_fall.active
         this.free_fall.now = false

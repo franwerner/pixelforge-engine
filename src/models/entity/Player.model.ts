@@ -8,13 +8,13 @@ class Player extends Entity {
         this.controls()
         this.isSolid = false
         this.free_fall = {
-            active: false,
+            active: true,
         }
         this.width = 25
         this.height = 16
     }
 
- 
+
     private controls() {
         //6.2323
         const pixel = 8
