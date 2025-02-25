@@ -15,8 +15,8 @@ constructor(){
         const { x, y } = this.position
         const { height, width } = this
         ctx.fillStyle = this.color
-        ctx.strokeStyle = "red"
-        ctx.strokeRect(x,y,width,height)
+        // ctx.strokeStyle = "red"
+        // ctx.strokeRect(x,y,width,height)
         ctx.fillRect(x, y, width, height)
         ctx.restore()
     }

@@ -1,3 +1,5 @@
+import TickModel from "../tick/Tick.model";
+import WorldModel from "../world/World.model";
 import World from "../world/World.model";
 import Entity from "./Entity.model";
 
@@ -13,6 +15,10 @@ class Player extends Entity {
         this.width = 25
         this.height = 16
     }
+
+    pause(){
+        WorldModel.pause = !WorldModel.pause
+       }
 
 
     private controls() {
@@ -35,9 +41,8 @@ class Player extends Entity {
         })
         window.addEventListener("keyup", (e) => {
             if (e.key === "Escape") {
-                const chunk = World.getChunk(this.position)
-                console.log(World.chunks)
-                console.log(chunk)
+                console.log(WorldModel.getChunk(this.position))
+            this.pause()
             } else if (e.key === "f") {
                 this.free_fall.active = !this.free_fall.active
                 this.free_fall.now = false

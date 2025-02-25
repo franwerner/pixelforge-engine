@@ -1,3 +1,4 @@
+import WorldModel from "@/models/world/World.model";
 import ITaskQueue from "./interface/TaskQueue.interface";
 
 type Queue = Map<Function, Function>
@@ -10,12 +11,13 @@ class GeneralTaskQueue {
         this.queue = new Map()
     }
     set(fn: Function, value?: any) {
+        if (WorldModel.pause) return
         this.queue.set(fn, () => fn(value))
     }
     get() {
         return this.queue
     }
-    clear(){
+    clear() {
         this.queue.clear()
     }
     process() {

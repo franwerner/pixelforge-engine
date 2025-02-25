@@ -1,5 +1,6 @@
 import Hitbox from "@/models/physics/Hitbox.model"
 import ITaskQueue from "./interface/TaskQueue.interface"
+import WorldModel from "@/models/world/World.model"
 
 type ElementTaskKey = Hitbox
 
@@ -17,6 +18,7 @@ interface ElementsTaskQueue extends ITaskQueue<Queue> {}
         this.queue = new Map()
     }
     set<T extends (...args: any[]) => any>(key: ElementTaskKey, fn: T, values?: any) {
+        if(WorldModel.pause) return
         const elementTask = this.queue.get(key)
         if (elementTask) {
             elementTask.set(fn, () => fn(values))

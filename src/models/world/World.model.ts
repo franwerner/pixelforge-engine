@@ -2,7 +2,6 @@ import Position from "@/types/Position.types.js";
 import ChunkModel, { Chunk } from "./Chunk.model.js"
 import worldProperties from "@/constant/world-properties.contants.js";
 import toDecimal from "@/utils/toDecimal.utilts.js";
-import TickModel from "../tick/Tick.model.js";
 import GeneralTaskQueueModel from "../tick/task-queue/GeneralTaskQueue.model.js";
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d");
@@ -19,6 +18,7 @@ interface World {
         now: number
     }
     loadedChunks: Array<Chunk>
+    pause : boolean
 }
 
 class World {
@@ -31,6 +31,7 @@ class World {
             last: performance.now()
         }
         this.loadedChunks = []
+        this.pause = false
     }
     private ref_loadChunksInRange = (props: Position) => {
         const { size } = worldProperties.chunk

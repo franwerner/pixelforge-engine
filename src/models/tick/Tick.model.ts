@@ -5,6 +5,7 @@ interface Tick {
     elementsTaskQueue: ElementsTaskQueue
     generalTaskQueue: GeneralTaskQueue
     nextUpdate: number
+    tickCount : number
 }
 
 const TICKS_PER_SECOND = 60
@@ -14,6 +15,7 @@ class Tick {
         this.nextUpdate = performance.now()
         this.elementsTaskQueue = ElementsTaskQueueModel
         this.generalTaskQueue = GeneralTaskQueueModel
+        this.tickCount = 0
     }
 
     getTaks() {
@@ -33,6 +35,7 @@ class Tick {
             this.getTaks().forEach(task => task.process())
             this.clear()
             this.nextUpdate = now + TICK_RATE
+            this.tickCount++;
         }
     }
 }

@@ -1,5 +1,5 @@
 import Movement from "@/types/Movent.types"
-import { Cell, CellElementsWithZero } from "../world/Chunk.model"
+import { Cell, CellElements, CellElementsWithZero } from "../world/Chunk.model"
 import distanceEuclides from "@/utils/distanceEuclides.utilts"
 import Position from "@/types/Position.types"
 import World from "../world/World.model"
@@ -7,33 +7,8 @@ import Hitbox from "./Hitbox.model"
 import worldProperties from "@/constant/world-properties.contants"
 import Renderer from "../render/Renderer.model"
 import Axis from "@/types/Axis.types"
-import Player from "../entity/Player.model"
-import WorldModel from "../world/World.model"
-
-interface ICollisionException {
-    colission: boolean,
-    offset: { x: number, y: number }
-    element: CellElementsWithZero
-    type: "border" | "element"
-
-}
-
-class CollisionException {
-    colission: ICollisionException["colission"]
-    offset: ICollisionException["offset"]
-    element: ICollisionException["element"]
-    type: ICollisionException["type"]
-    constructor({ element, offset, type }: Omit<ICollisionException, "colission">) {
-        this.element = element
-        this.colission = true
-        this.offset = offset,
-            this.type = type
-    }
-
-    static isInstaceOf(exception: unknown) {
-        return exception instanceof CollisionException
-    }
-}
+import CollisionException from "@/utils/colissionExeception.utils"
+import TickModel from "../tick/Tick.model"
 
 class Collider extends Hitbox {
     constructor() {
@@ -54,7 +29,6 @@ class Collider extends Hitbox {
             const sorted = copied.sort((a, b) => distanceEuclides(a.position, this.position) - distanceEuclides(b.position, this.position)).filter(i => i !== this)
             for (const i of sorted) {
                 const res = this.pixelColission({ element: i, axis })
-                if (res) return res
             }
         }
 
@@ -65,7 +39,6 @@ class Collider extends Hitbox {
         const collidedBounds = element.getBounds()
         const current = currentBounds[type]
         const collided = collidedBounds[type]
-
 
         const colissionCurrentAxis =
             value > 0
@@ -80,13 +53,11 @@ class Collider extends Hitbox {
         const colissionCounterAxis =
             counterCurrent.end > counterCollided.start &&
             counterCurrent.start < counterCollided.end
-
-
         if (!colissionCurrentAxis || !colissionCounterAxis) return
 
 
         const offset = current.end < collided.end ? collided.start - current.end : collided.end - current.start //resultado positivo-negativo
-        throw new CollisionException({
+        throw new CollisionException<CellElements>({
             element,
             offset: {
                 [type]: offset,
@@ -97,11 +68,11 @@ class Collider extends Hitbox {
 
     }
 
-    borderColission({ dy, dx }: Movement): CollisionException | undefined {
-        const max_chunk = worldProperties.chunk.max_chunk_y * 512
+    borderColission({ dy, dx }: Movement): CollisionException<0> | undefined {
+        const max_chunk = worldProperties.chunk.max_chunk_y * worldProperties.chunk.size
         const { end, start } = this.getBounds().y
         if ((end + dy) > max_chunk || (start + dy) < -max_chunk) {
-            return new CollisionException({
+            return new CollisionException<0>({
                 element: 0,
                 offset: {
                     x: dx,
@@ -136,7 +107,6 @@ class Collider extends Hitbox {
             const y = type == "y" ? value + acc : counter_type
             const x = type == "x" ? value + acc : counter_type
             const element = this.getCell({ x: x, y: y })
-
             this.pixelColission({
                 axis: {
                     type: type,
@@ -147,19 +117,9 @@ class Collider extends Hitbox {
     }
 
 
-    checkColission(props: Position, movement: Movement, visited = new Set()): CollisionException | undefined {
-        const cords = `${movement.dy}|${movement.dx}`
+    checkColission(props: Position, movement: Movement) {
         try {
-            if (visited.has(cords)) {
-                return new CollisionException({
-                    element: 0,
-                    offset: {
-                        x: 0,
-                        y: 0
-                    },
-                    type: ""
-                })
-            }
+
             this.rangeColission({
                 counter_type: props.x,
                 movement: movement.dy,
@@ -174,21 +134,12 @@ class Collider extends Hitbox {
             })
         } catch (e) {
             if (CollisionException.isInstaceOf(e)) {
-                // visited.add(cords)
-                // const res = this.checkColission(props,{
-                //     dx : e.offset.x,
-                //     dy : e.offset.y
-                // },visited)
-                // if(res) return res
                 return e
             }
-
         }
     }
 }
 
 
-export {
-    CollisionException
-}
+
 export default Collider

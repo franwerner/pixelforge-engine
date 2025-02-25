@@ -18,10 +18,6 @@ class Entity extends Renderer {
         this.height = 32
     }
 
-    pause(){
-        this.free_fall.active = !this.free_fall.active
-        this.free_fall.now = false
-       }
 
     spawn(props: Position = { x: 0.1, y: 0.1 }) {
         if (this.hasSpawned) return

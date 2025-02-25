@@ -1,8 +1,10 @@
+import CollisionException from "@/utils/colissionExeception.utils";
 import Player from "../entity/Player.model";
 import ElementsTaskQueueModel from "../tick/task-queue/ElementsTaskQueue.model";
 import WorldModel from "../world/World.model";
-import { CollisionException } from "./Collider.model";
 import Motion from "./Motion.model";
+import { CellElements } from "../world/Chunk.model";
+import TickModel from "../tick/Tick.model";
 
 interface Gravity {
 
@@ -15,7 +17,7 @@ interface Gravity {
     active: boolean
   }
 }
-
+type ColissionExeceptionElements = Array<CollisionException<CellElements>>
 const rebound = 0.3
 
 class Gravity extends Motion {
@@ -27,13 +29,12 @@ class Gravity extends Motion {
     }
     this.gravity = 6.8
     this.mass = 20
-    this.vy = 0
+    this.vy = 40
     this.rebound = rebound
   }
 
-  bounce(colission?: CollisionException) {
-
-    if (colission && ["border", "element"].includes(colission.type)) {
+  bounce(isColission: boolean) {
+    if (isColission) {
       this.vy = -(this.vy * this.rebound)
       if (Math.abs(this.vy) <= 0.1) {
         this.vy = 0
@@ -45,11 +46,13 @@ class Gravity extends Motion {
       this.free_fall.now = true
     }
   }
-  transferImpactToDownElement(colission?: CollisionException) {
-    const element = colission?.element
-    if (element) {
+  transferImpactToDownElement(colission: ColissionExeceptionElements) {
+    if (colission.length) {
       const transferImpact = this.vy * (1 - this.rebound)
-      element.vy += transferImpact
+      const transferImpactToElement = transferImpact / colission.length
+      colission.forEach(({ element }) => {
+        element.vy += transferImpactToElement
+      })
     }
   }
 
@@ -57,10 +60,10 @@ class Gravity extends Motion {
     if (!this.free_fall.active) return
     const delta_time = (WorldModel.time.now - WorldModel.time.last)
     this.vy += this.gravity * delta_time / 1000
+    const { borderColission, elementsColission } = this.ensureMove({ dx: 0, dy: this.vy })
+    this.transferImpactToDownElement(elementsColission)
+    this.bounce(!!(borderColission || elementsColission.length))
 
-    const { colission } = this.ensureMove({ dx: 0, dy: this.vy })
-    this.transferImpactToDownElement(colission)
-    this.bounce(colission)
   }
 
   applyGravity() {

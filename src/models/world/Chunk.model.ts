@@ -2,7 +2,6 @@ import worldProperties from "@/constant/world-properties.contants"
 import Position from "@/types/Position.types"
 import WorldModel from "./World.model"
 import Renderer from "../render/Renderer.model"
-import toDecimal from "@/utils/toDecimal.utilts"
 
 type CellElements = Renderer
 type CellElementsWithZero = CellElements | 0
@@ -147,5 +146,5 @@ class Chunk extends ChunkElements {
 }
 
 
-export type { Chunk, Cell, CellElementsWithZero }
+export type { Chunk, Cell, CellElementsWithZero,CellElements }
 export default Chunk
